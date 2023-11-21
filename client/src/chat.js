@@ -1,53 +1,58 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from "react";
+//import ScrollToBottom from "react-scroll-to-bottom";
 
-const Chat = ({socket, username, room}) => {
-    const[curmsg, setCurMsg]=useState("");
+function Chat({ socket, username, room }) {
+  const [currentMessage, setCurrentMessage] = useState("");
+  const [messageList, setMessageList] = useState([]);
 
-    const sendMsg = async ()=>{
-        if (curmsg!== "") {
-            const messageData = {
-              room: room,
-              author: username,
-              message: curmsg,
-              time:
-                new Date(Date.now()).getHours() +":" +new Date(Date.now()).getMinutes(),
-            }
-            await socket.emit("send_message", messageData);
-            setCurMsg("");
-    }
-    else{
-        console.log("seocket not connected");
+  const sendMessage = async () => {
+    if (currentMessage !== "") {
+      const messageData = {
+        room: room,
+        author: username,
+        message: currentMessage,
+        time:
+          new Date(Date.now()).getHours() +
+          ":" +
+          new Date(Date.now()).getMinutes(),
+      };
+
+      await socket.emit("send_message", messageData);
+      setMessageList((list) => [...list, messageData]);
+      setCurrentMessage("");
     }
   };
-      
-            
-         
-    
+
+  useEffect(() => {
+    socket.on("receive_message", (data) => {
+      setMessageList((list) => [...list, data]);
+    });
+  }, [socket]);
 
   return (
-    <div>
-        <div className="chat-header"></div>
-        <h3>Real Time Chat</h3>
-        <div className="chat-body"></div>
-        <div className="chat-footer">
+    <div className="chat-window">
+      <div className="chat-header">
+        <p>Live Chat</p>
+      </div>
+      <div className="chat-body">
+
+      </div>
+      <div className="chat-footer">
         <input
           type="text"
+          value={currentMessage}
           placeholder="Hey..."
-          value={curmsg}
-
           onChange={(event) => {
-            setCurMsg(event.target.value);
+            setCurrentMessage(event.target.value);
+          }}
+          onKeyPress={(event) => {
+            event.key === "Enter" && sendMessage();
           }}
         />
-        <button onClick={sendMsg}>&#9658;</button>
-
-        </div>
-
-      
+        <button onClick={sendMessage}>&#9658;</button>
+      </div>
     </div>
   );
 }
 
-
-
-export default Chat; 
+export default Chat;
